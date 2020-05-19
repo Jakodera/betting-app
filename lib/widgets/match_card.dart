@@ -3,25 +3,13 @@ import 'package:fun_app/models/odd_model.dart';
 import 'package:fun_app/providers/bet_provider.dart';
 import 'package:provider/provider.dart';
 
-class MatchCard extends StatefulWidget {
-  final List<OddModel> oddMatches;
-  final int index;
+class MatchCard extends StatelessWidget {
+  final OddModel game;
 
-  MatchCard({this.oddMatches, this.index});
-
-  @override
-  _MatchCardState createState() => _MatchCardState();
-}
-
-class _MatchCardState extends State<MatchCard>
-    with AutomaticKeepAliveClientMixin {
-  int ind;
+  MatchCard({this.game});
 
   @override
   Widget build(BuildContext context) {
-    super.build(context);
-
-    print("MatchCardBuild");
     return Container(
       width: 220,
       child: Card(
@@ -31,259 +19,32 @@ class _MatchCardState extends State<MatchCard>
             borderRadius: BorderRadius.all(Radius.circular(30))),
         child: Stack(
           children: <Widget>[
-            (widget.oddMatches[widget.index].minute.length < 4 &&
-                    widget.oddMatches[widget.index].minute != "FT")
+            (game.minute.length < 4 && game.minute != "FT")
                 ? Positioned(
                     top: 6,
                     right: 4,
-                    child: liveLockedWidget(),
+                    child: _liveLockedWidget(),
                   )
                 : Container(),
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-                SizedBox(height: 16),
-                Text(
-                  widget.oddMatches[widget.index].tournamentName,
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700),
-                ),
-                SizedBox(
-                  height: 5,
-                ),
-                Column(
-                  children: <Widget>[
-                    Text(
-                      widget.oddMatches[widget.index].date,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                      ),
-                    ),
-                    Text(
-                      widget.oddMatches[widget.index].minute,
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
+                _tournamentName(),
+                _cardDate(),
+                _cardTime(),
                 SizedBox(height: 8),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: <Widget>[
-                      Image.network(
-                        widget.oddMatches[widget.index].homeImage,
-                        height: 48,
-                        width: 48,
-                      ),
-                      Image.network(
-                        widget.oddMatches[widget.index].awayImage,
-                        height: 48,
-                        width: 48,
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: <Widget>[
-                      Text(
-                        widget.oddMatches[widget.index].score == "v"
-                            ? widget.oddMatches[widget.index].homeAbb
-                            : widget.oddMatches[widget.index].score[0],
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                        ),
-                      ),
-                      Text(
-                        ":",
-                        style: TextStyle(color: Colors.white, fontSize: 24),
-                      ),
-                      Text(
-                        widget.oddMatches[widget.index].score == "v"
-                            ? widget.oddMatches[widget.index].awayAbb
-                            : widget.oddMatches[widget.index].score[4],
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                _cardImages(),
+                _cardScore(),
                 SizedBox(height: 4),
-                (widget.oddMatches[widget.index].pick != "" &&
-                        widget.oddMatches[widget.index].minute == "FT")
-                    ? Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: <Widget>[
-                          displayFinishedCard(
-                              widget.oddMatches[widget.index].host,
-                              widget.oddMatches[widget.index].coefHost,
-                              "1",
-                              widget.oddMatches[widget.index]),
-                          displayFinishedCard(
-                              "Draw",
-                              widget.oddMatches[widget.index].coefDraw,
-                              "X",
-                              widget.oddMatches[widget.index]),
-                          displayFinishedCard(
-                              widget.oddMatches[widget.index].guest,
-                              widget.oddMatches[widget.index].coefGuest,
-                              "2",
-                              widget.oddMatches[widget.index]),
-                        ],
-                      )
+                (game.minute == "FT")
+                    ? _displayFinishedMatches()
                     : Consumer<BetProvider>(
                         builder: (_, betProvider, __) => Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: <Widget>[
-                            (widget.oddMatches[widget.index].minute.length <
-                                        4 &&
-                                    widget.oddMatches[widget.index].minute !=
-                                        "FT")
-                                ? displayTeam(
-                                    widget.oddMatches[widget.index].host,
-                                    widget.oddMatches[widget.index].coefHost,
-                                    betProvider.oddModel,
-                                    widget.oddMatches[widget.index],
-                                    "1",
-                                  )
-                                : GestureDetector(
-                                    onTap: () {
-                                      ind = betProvider.oddModel.indexOf(
-                                          widget.oddMatches[widget.index]);
-                                      if (ind > -1) {
-                                        if (betProvider.oddModel[ind].pick ==
-                                            "1") {
-                                          betProvider.removeMatch(
-                                              widget.oddMatches[widget.index],
-                                              ind);
-                                        } else {
-                                          betProvider.removeMatch(
-                                              widget.oddMatches[widget.index],
-                                              ind);
-
-                                          widget.oddMatches[widget.index].pick =
-                                              "1";
-                                          betProvider.addMatch(
-                                              widget.oddMatches[widget.index]);
-                                        }
-                                      } else {
-                                        widget.oddMatches[widget.index].pick =
-                                            "1";
-                                        betProvider.addMatch(
-                                            widget.oddMatches[widget.index]);
-                                      }
-                                    },
-                                    child: displayTeam(
-                                      widget.oddMatches[widget.index].host,
-                                      widget.oddMatches[widget.index].coefHost,
-                                      betProvider.oddModel,
-                                      widget.oddMatches[widget.index],
-                                      "1",
-                                    )),
-                            (widget.oddMatches[widget.index].minute.length <
-                                        4 &&
-                                    widget.oddMatches[widget.index].minute !=
-                                        "FT")
-                                ? displayTeam(
-                                    "Draw",
-                                    widget.oddMatches[widget.index].coefDraw,
-                                    betProvider.oddModel,
-                                    widget.oddMatches[widget.index],
-                                    "X",
-                                  )
-                                : GestureDetector(
-                                    onTap: () {
-                                      ind = betProvider.oddModel.indexOf(
-                                          widget.oddMatches[widget.index]);
-                                      if (ind > -1) {
-                                        if (betProvider.oddModel[ind].pick ==
-                                            "X") {
-                                          betProvider.removeMatch(
-                                              widget.oddMatches[widget.index],
-                                              ind);
-                                        } else {
-                                          betProvider.removeMatch(
-                                              widget.oddMatches[widget.index],
-                                              ind);
-                                          widget.oddMatches[widget.index].pick =
-                                              "X";
-                                          betProvider.addMatch(
-                                              widget.oddMatches[widget.index]);
-                                          betProvider.oddModel[ind].pick = "X";
-                                        }
-                                      } else {
-                                        widget.oddMatches[widget.index].pick =
-                                            "X";
-                                        betProvider.addMatch(
-                                            widget.oddMatches[widget.index]);
-                                      }
-                                    },
-                                    child: displayTeam(
-                                      "Draw",
-                                      widget.oddMatches[widget.index].coefDraw,
-                                      betProvider.oddModel,
-                                      widget.oddMatches[widget.index],
-                                      "X",
-                                    ),
-                                  ),
-                            (widget.oddMatches[widget.index].minute.length <
-                                        4 &&
-                                    widget.oddMatches[widget.index].minute !=
-                                        "FT")
-                                ? displayTeam(
-                                    widget.oddMatches[widget.index].guest,
-                                    widget.oddMatches[widget.index].coefGuest,
-                                    betProvider.oddModel,
-                                    widget.oddMatches[widget.index],
-                                    "2",
-                                  )
-                                : GestureDetector(
-                                    onTap: () {
-                                      ind = betProvider.oddModel.indexOf(
-                                          widget.oddMatches[widget.index]);
-                                      if (ind > -1) {
-                                        if (betProvider.oddModel[ind].pick ==
-                                            "2") {
-                                          betProvider.removeMatch(
-                                              widget.oddMatches[widget.index],
-                                              ind);
-                                        } else {
-                                          betProvider.removeMatch(
-                                              widget.oddMatches[widget.index],
-                                              ind);
-                                          widget.oddMatches[widget.index].pick =
-                                              "2";
-                                          betProvider.addMatch(
-                                              widget.oddMatches[widget.index]);
-                                          betProvider.oddModel[ind].pick = "2";
-                                        }
-                                      } else {
-                                        widget.oddMatches[widget.index].pick =
-                                            "2";
-                                        betProvider.addMatch(
-                                            widget.oddMatches[widget.index]);
-                                      }
-                                    },
-                                    child: displayTeam(
-                                      widget.oddMatches[widget.index].guest,
-                                      widget.oddMatches[widget.index].coefGuest,
-                                      betProvider.oddModel,
-                                      widget.oddMatches[widget.index],
-                                      "2",
-                                    ),
-                                  ),
+                            _displayHomeTeam(betProvider),
+                            _displayDrawTeam(betProvider),
+                            _displayAwayTeam(betProvider),
                           ],
                         ),
                       ),
@@ -295,8 +56,153 @@ class _MatchCardState extends State<MatchCard>
     );
   }
 
-  Widget displayFinishedCard(
-      String team, String odd, String pick, OddModel model) {
+  _tournamentName() {
+    return Padding(
+      padding: const EdgeInsets.only(top: 16.0, bottom: 5),
+      child: Text(
+        game.tournamentName,
+        style: TextStyle(
+            color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700),
+      ),
+    );
+  }
+
+  _cardDate() {
+    return Text(
+      game.date,
+      style: TextStyle(
+        color: Colors.white,
+        fontSize: 12,
+      ),
+    );
+  }
+
+  _cardTime() {
+    return Text(
+      game.minute,
+      style: TextStyle(
+          color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+    );
+  }
+
+  _cardImages() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: <Widget>[
+          Image.network(
+            game.homeImage,
+            height: 48,
+            width: 48,
+          ),
+          Image.network(
+            game.awayImage,
+            height: 48,
+            width: 48,
+          ),
+        ],
+      ),
+    );
+  }
+
+  _cardScore() {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: <Widget>[
+          Text(
+            game.score == "v" ? game.homeAbb : game.score[0],
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+            ),
+          ),
+          Text(
+            ":",
+            style: TextStyle(color: Colors.white, fontSize: 24),
+          ),
+          Text(
+            game.score == "v" ? game.awayAbb : game.score[4],
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  _displayFinishedMatches() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: <Widget>[
+        _displayFinishedCard(game.host, game.coefHost, "1", game),
+        _displayFinishedCard("Draw", game.coefDraw, "X", game),
+        _displayFinishedCard(game.guest, game.coefGuest, "2", game),
+      ],
+    );
+  }
+
+  _userTip(BetProvider betProvider, String tip) {
+    if (game.minute.length < 4 && game.minute != "FT") {
+      return;
+    } else {
+      int ind = betProvider.oddModel.indexOf(game);
+      if (ind > -1) {
+        if (betProvider.oddModel[ind].pick == tip) {
+          betProvider.removeMatch(game);
+        } else {
+          betProvider.removeMatch(game);
+          game.pick = tip;
+          betProvider.addMatch(game);
+        }
+      } else {
+        game.pick = tip;
+        betProvider.addMatch(game);
+      }
+    }
+  }
+
+  _displayHomeTeam(BetProvider betProvider) {
+    return GestureDetector(
+      onTap: () {
+        _userTip(betProvider, "1");
+      },
+      child: _displayTeam(
+        betProvider.oddModel,
+        "1",
+      ),
+    );
+  }
+
+  _displayDrawTeam(BetProvider betProvider) {
+    return GestureDetector(
+      onTap: () {
+        _userTip(betProvider, "X");
+      },
+      child: _displayTeam(
+        betProvider.oddModel,
+        "X",
+      ),
+    );
+  }
+
+  _displayAwayTeam(BetProvider betProvider) {
+    return GestureDetector(
+      onTap: () {
+        _userTip(betProvider, "2");
+      },
+      child: _displayTeam(
+        betProvider.oddModel,
+        "2",
+      ),
+    );
+  }
+
+  _displayFinishedCard(String team, String odd, String pick, OddModel model) {
     return Column(
       children: <Widget>[
         Container(
@@ -337,11 +243,34 @@ class _MatchCardState extends State<MatchCard>
     );
   }
 
-  Widget displayTeam(String team, String odd, List<OddModel> model,
-      OddModel oddModel, String pickara) {
-    bool modelPick = false;
+  _displayTeam(List<OddModel> model, String pickara) {
+    String team, odd;
+    switch (pickara) {
+      case "1":
+        team = game.host;
+        odd = game.coefHost;
+        break;
+      case "X":
+        team = "Draw";
+        odd = game.coefDraw;
+        break;
+      case "2":
+        team = game.guest;
+        odd = game.coefGuest;
+        break;
+    }
 
-    if (model.contains(oddModel) && oddModel.pick == pickara) modelPick = true;
+    OddModel currGame =
+        (model.indexOf(game) > -1) ? model[model.indexOf(game)] : null;
+    bool modelPick;
+
+    if (game.minute.length < 4 && game.minute != "FT") {
+      modelPick = false;
+    } else if (model.contains(game) && currGame.pick == pickara) {
+      modelPick = true;
+    } else {
+      modelPick = false;
+    }
 
     return Column(
       children: <Widget>[
@@ -383,7 +312,7 @@ class _MatchCardState extends State<MatchCard>
     );
   }
 
-  Widget liveLockedWidget() {
+  Widget _liveLockedWidget() {
     return Row(
       children: <Widget>[
         Text(
@@ -402,7 +331,4 @@ class _MatchCardState extends State<MatchCard>
       ],
     );
   }
-
-  @override
-  bool get wantKeepAlive => true;
 }

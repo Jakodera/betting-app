@@ -1,11 +1,10 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:fun_app/models/odd_model.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:fun_app/blocs/bet/bet_bloc.dart';
 import 'package:fun_app/models/player_model.dart';
 import 'package:fun_app/models/user_ticket.dart';
 import 'package:fun_app/providers/bet_provider.dart';
 import 'package:fun_app/services/dialogs/bet_placed_dialog.dart';
-import 'package:fun_app/services/firestore_crud.dart';
 import 'package:fun_app/widgets/ticket_builder.dart';
 import 'package:provider/provider.dart';
 
@@ -16,20 +15,16 @@ class BettingTipsPage extends StatefulWidget {
 
 class _BettingTipsPageState extends State<BettingTipsPage>
     with AutomaticKeepAliveClientMixin {
-  
-  UserTicket _userTicket = UserTicket();
+  UserTicket _userTicket;
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
 
-    DocumentReference docRef;
-    final playerModel = Provider.of<PlayerModel>(context, listen: false);
+    _userTicket = UserTicket();
 
-    print("Betting tips build");
     final betProvider = Provider.of<BetProvider>(context);
-    final fbCrud = Provider.of<FirebaseCrud>(context, listen: false);
-    final profileStream = Provider.of<PlayerModel>(context, listen: false);
+    final _profileStream = Provider.of<PlayerModel>(context, listen: false);
 
     Widget column = SingleChildScrollView(
       scrollDirection: Axis.vertical,
@@ -148,56 +143,75 @@ class _BettingTipsPageState extends State<BettingTipsPage>
             height: 20,
           ),
           GestureDetector(
-            child: showSubmitBetButton(betProvider, playerModel) == true ? Container(
-              height: 50,
-              width: 400,
-              decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.85),
-                  borderRadius: BorderRadius.all(Radius.circular(15)),
-                  border: Border.all(color: Colors.white30, width: 0.5)),
-              child: Align(
-                alignment: Alignment.center,
-                child: Text(
-                  "PLACE A BET",
-                  style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w500),
-                ),
-              ),
-            ) : Container(
-              child: Column(
-                children: <Widget>[
-                   _errorInfo("Please check this:"),
-                  SizedBox(height: 4),
-                  _errorInfo("Max CashOut: 300,000 €"),
-                  SizedBox(height: 4),
-                  _errorInfo("Max Bet: 10,000 €"),
-                  SizedBox(height: 4),
-                  _errorInfo("Max Tips: 10"),
-                  SizedBox(height: 4),
-                  _errorInfo("Don't have enough funds?")
-                ],
-              ),
-            ),
+            child: showSubmitBetButton(betProvider, _profileStream) == true
+                ? Container(
+                    height: 50,
+                    width: 400,
+                    decoration: BoxDecoration(
+                        color: Colors.green.withOpacity(0.85),
+                        borderRadius: BorderRadius.all(Radius.circular(15)),
+                        border: Border.all(color: Colors.white30, width: 0.5)),
+                    child: Align(
+                      alignment: Alignment.center,
+                      child: Text(
+                        "PLACE A BET",
+                        style: TextStyle(
+                            color: Colors.black,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                  )
+                : Container(
+                    child: Column(
+                      children: <Widget>[
+                        _errorInfo("Please check this:"),
+                        SizedBox(height: 4),
+                        _errorInfo("Max CashOut: 300,000 €"),
+                        SizedBox(height: 4),
+                        _errorInfo("Max Bet: 10,000 €"),
+                        SizedBox(height: 4),
+                        _errorInfo("Max Tips: 10"),
+                        SizedBox(height: 4),
+                        _errorInfo("Don't have enough funds?")
+                      ],
+                    ),
+                  ),
             onTap: () async {
-              docRef = await fbCrud.addTicketInfo(
-                _userTicket.toMap(
-                  betProvider.resultOdd.toStringAsFixed(2),
-                  betProvider.cashOut.toStringAsFixed(2),
-                  betProvider.betInput,
-                  betProvider.oddModel.length,
-                  profileStream.totalBets + 1,
+              // All Logic happens here ---> Maybe to complex
+              BlocProvider.of<BetBloc>(context).add(
+                BetPlacedButtonClicked(
+                  _userTicket.toMap(
+                      betProvider.resultOdd.toStringAsFixed(2),
+                      betProvider.cashOut.toStringAsFixed(2),
+                      betProvider.betInput,
+                      betProvider.oddModel.length,
+                      _profileStream.totalBets + 1),
+                  _profileStream.toMap(
+                    _profileStream.availableFunds,
+                    betProvider.betInput,
+                    _profileStream.totalBets,
+                    ((double.parse(_profileStream.totalOdd) +
+                                betProvider.resultOdd) /
+                            (_profileStream.totalBets + 1))
+                        .toStringAsFixed(1),
+                    ((double.parse(_profileStream.totalStake) +
+                                betProvider.betInput) /
+                            (_profileStream.totalBets + 1))
+                        .toStringAsFixed(1),
+                    (double.parse(_profileStream.moneyLost) +
+                            betProvider.betInput)
+                        .toStringAsFixed(1),
+                    (double.parse(_profileStream.totalOdd) +
+                            betProvider.resultOdd)
+                        .toStringAsFixed(1),
+                    (double.parse(_profileStream.totalStake) +
+                            betProvider.betInput)
+                        .toStringAsFixed(1),
+                  ),
+                  betProvider.oddModel,
                 ),
               );
-              for (var i = 0; i < betProvider.oddModel.length; i++) {
-                fbCrud.addMatch(OddModel().oddModelToMap(betProvider.oddModel[i]), docRef);
-              }
-              showDialog(
-                  context: context,
-                  builder: (BuildContext context) => BetPlacedDialog(
-                        buttonRoute: "/home",
-                      ));
             },
           ),
         ],
@@ -209,19 +223,60 @@ class _BettingTipsPageState extends State<BettingTipsPage>
         FocusScope.of(context).unfocus();
       },
       child: Padding(
-          padding: EdgeInsets.only(top: 78.0, bottom: 40, right: 20, left: 20),
-          child: betProvider.oddModel.length == 0 ? Container() : column),
+        padding: EdgeInsets.only(top: 78.0, bottom: 40, right: 20, left: 20),
+        child: betProvider.oddModel.length == 0
+            ? Container()
+            : BlocConsumer(
+                bloc: BlocProvider.of<BetBloc>(context),
+                listener: (context, state) {
+                  if (state is BetError) {
+                    Scaffold.of(context).showSnackBar(
+                      SnackBar(
+                        backgroundColor: Theme.of(context).primaryColor,
+                        content: Text(
+                          "Ooops ... Error Ocurred!",
+                          textAlign: TextAlign.center,
+                        ),
+                        duration: Duration(seconds: 3),
+                      ),
+                    );
+                  } else if (state is BetLoading) {
+                    showDialog(
+                      context: context,
+                      child: BetPlacedDialog(
+                        isLoading: true,
+                      ),
+                    );
+                  } else if (state is BetLoaded) {
+                    showDialog(
+                      context: context,
+                      child: BetPlacedDialog(
+                        isLoading: false,
+                      ),
+                    );
+                  }
+                },
+                builder: (context, state) {
+                  if (state is BetInitial) {
+                    return column;
+                  } else if (state is BetLoaded) {
+                    return Container();
+                  }
+                  return SizedBox();
+                },
+              ),
+      ),
     );
   }
 
   bool showSubmitBetButton(BetProvider betProvider, PlayerModel model) {
-    if(betProvider.betInput > 10000) {
+    if (betProvider.betInput > 10000) {
       return false;
-    } else if(betProvider.cashOut > 300000) {
+    } else if (betProvider.cashOut > 300000) {
       return false;
-    } else if(betProvider.oddModel.length > 10) {
+    } else if (betProvider.oddModel.length > 10) {
       return false;
-    } else if(betProvider.betInput > double.parse(model.availableFunds)) {
+    } else if (betProvider.betInput > double.parse(model.availableFunds)) {
       return false;
     }
     return true;
@@ -229,10 +284,8 @@ class _BettingTipsPageState extends State<BettingTipsPage>
 
   Text _errorInfo(String title) {
     return Text(
-      title, style: TextStyle(
-        fontSize: 13,
-        color: Colors.white
-      ),
+      title,
+      style: TextStyle(fontSize: 13, color: Colors.white),
     );
   }
 

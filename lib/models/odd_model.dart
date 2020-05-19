@@ -1,4 +1,3 @@
-import 'package:firebase_database/firebase_database.dart';
 
 class OddModel {
   String id;
@@ -42,23 +41,25 @@ class OddModel {
       this.status,
       this.odd});
 
-  OddModel.fromSnapshot(DataSnapshot snapshot) {
-    key = snapshot.key;
-    guest = snapshot.value["awayTeam"];
-    coefGuest = snapshot.value["awayOdd"];
-    coefDraw = snapshot.value["drawOdd"];
-    coefHost = snapshot.value["homeOdd"];
-    host = snapshot.value["homeTeam"];
-    draw = snapshot.value["drawTeam"];
-    minute = snapshot.value["minute"];
-    tournamentName = snapshot.value["tournamentName"];
-    date = snapshot.value["date"];
-    score = snapshot.value["score"];
-    pick = snapshot.value["pick"];
-    homeImage = snapshot.value["homeImage"];
-    awayImage = snapshot.value["awayImage"];
-    awayAbb = snapshot.value["awayAbb"];
-    homeAbb = snapshot.value["homeAbb"];
+  factory OddModel.fromSnapshot(Map<dynamic, dynamic> json, String key) {
+    return OddModel(
+      key: key,
+      guest: json["awayTeam"],
+      coefGuest: json["awayOdd"],
+      coefDraw: json["drawOdd"],
+      coefHost: json["homeOdd"],
+      host: json["homeTeam"],
+      draw: json["drawTeam"],
+      minute: json["minute"],
+      tournamentName: json["tournamentName"],
+      date: json["date"],
+      score: json["score"],
+      pick: json["pick"],
+      homeImage: json["homeImage"],
+      awayImage: json["awayImage"],
+      awayAbb: json["awayAbb"],
+      homeAbb: json["homeAbb"],
+    );
   }
 
   OddModel.fromDbJson(Map<dynamic, dynamic> map) {
@@ -106,17 +107,14 @@ class OddModel {
       "pick": model.pick,
       "odd": findOdd(model),
       "league": model.tournamentName,
-      "status": ""
+      "status": "active"
     };
   }
 
-  /*
-  Map<String, dynamic> listOddModelToMap(List<OddModel> models) {
-      return {
-        "games": models.map((model) {
-        return model.oddModelToMap();
-      }).toList(),
-      };
-  }
-  */
+  @override
+  bool operator ==(o) => o is OddModel && key == o.key;
+  
+  @override
+  int get hashCode => key.hashCode;
+
 }

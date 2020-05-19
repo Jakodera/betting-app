@@ -9,9 +9,4 @@ class LeagueLogoSelected with ChangeNotifier {
     _index = value;
     notifyListeners();
   }
-
-  void getIndex(int value) {
-    index = value;
-    notifyListeners();
-  }
 }

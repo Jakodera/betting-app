@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:fun_app/models/odd_model.dart';
 import 'package:fun_app/models/player_model.dart';
 import 'package:fun_app/models/user_ticket.dart';
-import 'package:fun_app/providers/ticket_validation_provider.dart';
 import 'package:fun_app/providers/value_notifiers/ticket_filter_value_notifier.dart';
-import 'package:fun_app/services/firebase_rtdb.dart';
-import 'package:fun_app/services/firestore_crud.dart';
 import 'package:fun_app/widgets/ticket_display.dart';
 import 'package:provider/provider.dart';
+import 'package:fun_app/services/firestore_crud.dart';
+import 'package:fun_app/services/firebase_rtdb.dart';
+import 'package:fun_app/providers/ticket_validation_provider.dart';
 
 class CashFlowPage extends StatefulWidget {
   @override
@@ -16,37 +17,45 @@ class CashFlowPage extends StatefulWidget {
 class _CashFlowPageState extends State<CashFlowPage>
     with AutomaticKeepAliveClientMixin {
   GlobalKey<RefreshIndicatorState> refreshKey;
+  FirebaseCrud _fbCrud;
+  PlayerModel _playerProfile;
+  TicketValidationProvider _validationProvider;
 
   @override
   void initState() {
+    // Refresh Key
     refreshKey = GlobalKey<RefreshIndicatorState>();
-    final provider =
+    //podaci o iogracu sa firebasea
+    _playerProfile = Provider.of<PlayerModel>(context, listen: false);
+    _validationProvider =
         Provider.of<TicketValidationProvider>(context, listen: false);
-    final fbCrud = Provider.of<FirebaseCrud>(context, listen: false);
-    final playerModel = Provider.of<PlayerModel>(context, listen: false);
-    FirebaseRTDB.matchStatusQuery(provider);
-    fbCrud.userTips(provider);
-    provider.validateMatchResult(provider.finishedMatches,
-        provider.ticketMatches, fbCrud, provider.ticketIds, playerModel);
+    _fbCrud = Provider.of<FirebaseCrud>(context, listen: false);
+    // Validiraj odmah cim korisnik pristupi stranici
+    FirebaseRTDB.matchStatusQuery(_validationProvider);
+    _validationProvider.validateMatchResult(
+        _validationProvider.finishedMatches,
+        _validationProvider.ticketMatches,
+        _fbCrud,
+        _validationProvider.ticketIds,
+        _playerProfile);
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
-
+    // Screen Height and Width
     final double height = MediaQuery.of(context).size.height;
     final double width = MediaQuery.of(context).size.width;
-    print("cash flow build");
 
-    final filterTicket = Provider.of<TicketFilterValue>(context);
+    //Lista filtriranih tiketa sa firebasea
+    var filterTicket = Provider.of<TicketFilterValue>(context);
     var ticketStream = Provider.of<List<UserTicket>>(context)
         .where((ticket) => ticket.ticketStatus == filterTicket.filterTickets)
         .toList();
-    final ticketValidation =
-        Provider.of<TicketValidationProvider>(context, listen: false);
-    final fbCrud = Provider.of<FirebaseCrud>(context, listen: false);
-    final playerModel = Provider.of<PlayerModel>(context, listen: false);
+    // Stream Matcheva sa ticketa
+    List<OddModel> models = [];
+    models.add(OddModel.initialData());
 
     return SingleChildScrollView(
       child: Padding(
@@ -73,16 +82,17 @@ class _CashFlowPageState extends State<CashFlowPage>
                       filterTicket.setFilterTickets(value);
                     },
                     items: <String>["active", "win", "lose"]
-                        .map<DropdownMenuItem<String>>((String value) {
-                      return DropdownMenuItem<String>(
+                        .map<DropdownMenuItem<String>>(
+                      (String value) {
+                        return DropdownMenuItem<String>(
                           value: value,
                           child: Text(
                             value,
-                            style: TextStyle(
-                              color: Colors.white,
-                            ),
-                          ));
-                    }).toList(),
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        );
+                      },
+                    ).toList(),
                   ),
                 ],
               ),
@@ -95,13 +105,15 @@ class _CashFlowPageState extends State<CashFlowPage>
                 key: refreshKey,
                 displacement: 20,
                 onRefresh: () async {
-                  await FirebaseRTDB.matchStatusQuery(ticketValidation);
-                  await ticketValidation.validateMatchResult(
-                      ticketValidation.finishedMatches,
-                      ticketValidation.ticketMatches,
-                      fbCrud,
-                      ticketValidation.ticketIds,
-                      playerModel);
+                  // Get results from RealTime Database
+                  await FirebaseRTDB.matchStatusQuery(_validationProvider);
+                  // Validate all tickets
+                  await _validationProvider.validateMatchResult(
+                      _validationProvider.finishedMatches,
+                      _validationProvider.ticketMatches,
+                      _fbCrud,
+                      _validationProvider.ticketIds,
+                      _playerProfile);
                 },
                 child: ListView.builder(
                   itemCount: ticketStream.length,

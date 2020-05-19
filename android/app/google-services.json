@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "293090573388",
+    "firebase_url": "https://fun-app-bet.firebaseio.com",
+    "project_id": "fun-app-bet",
+    "storage_bucket": "fun-app-bet.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:293090573388:android:118d6cd1e643f71ce448e9",
+        "android_client_info": {
+          "package_name": "com.indigo.fun_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "293090573388-3qcdv7gqf1g440ao4fuv839qvv73v18p.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCTnt1ogde03bmoDjF_lzR2gwldhgoW6JU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "293090573388-3qcdv7gqf1g440ao4fuv839qvv73v18p.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

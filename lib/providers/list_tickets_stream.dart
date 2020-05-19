@@ -15,8 +15,8 @@ class TicketListStream {
         .orderBy('ticketNum', descending: true)
         .snapshots()
         .map((snapshot) => snapshot.documents
-            .map((document) => UserTicket.fromMap(document.data, document.documentID))
+            .map((document) =>
+                UserTicket.fromMap(document.data, document.documentID))
             .toList());
   }
-  
 }

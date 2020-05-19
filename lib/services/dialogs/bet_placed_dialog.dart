@@ -1,51 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:fun_app/models/player_model.dart';
+import 'package:fun_app/main.dart';
 import 'package:fun_app/providers/bet_provider.dart';
 import 'package:fun_app/providers/value_notifiers/my_home_page_value_notifier.dart';
-import 'package:fun_app/services/firestore_crud.dart';
 import 'package:fun_app/widgets/app_background.dart';
 import 'package:provider/provider.dart';
 
-class BetPlacedDialog extends StatefulWidget {
-  final String buttonRoute;
-  final String docRef;
-
-  const BetPlacedDialog({Key key, this.buttonRoute, this.docRef})
-      : super(key: key);
-
-  @override
-  _BetPlacedDialogState createState() => _BetPlacedDialogState();
-}
-
-class _BetPlacedDialogState extends State<BetPlacedDialog> {
-  double averageOdd, averageStake;
-  PlayerModel _model;
-  String funds, moneyLostSoFar;
-  int totalBets, userWinRate;
-
-  @override
-  void initState() {
-    var fbCrud = Provider.of<FirebaseCrud>(context, listen: false);
-    var playerProfile = Provider.of<PlayerModel>(context, listen: false);
-    fbCrud.getSummedOdd().then((value) {
-      averageOdd = value;
-    });
-    fbCrud.getSummedStake().then((value) {
-      averageStake = value;
-    });
-    funds = playerProfile.availableFunds;
-    totalBets = playerProfile.totalBets;
-    moneyLostSoFar = playerProfile.moneyLost;
-    userWinRate = playerProfile.winRate;
-    _model = PlayerModel();
-    super.initState();
-  }
-
+class BetPlacedDialog extends StatelessWidget {
+  final bool isLoading;
+  const BetPlacedDialog({Key key, this.isLoading = false}) : super(key: key);
+  
   @override
   Widget build(BuildContext context) {
-    var betprovider = Provider.of<BetProvider>(context, listen: false);
-    var selectedPage = Provider.of<SelectedPage>(context, listen: false);
-    var fbCrud = Provider.of<FirebaseCrud>(context, listen: false);
+    final betProvider = Provider.of<BetProvider>(context, listen: false);
+    final nextPage = Provider.of<SelectedPage>(context, listen: false);
 
     return Scaffold(
       body: Stack(
@@ -60,7 +27,17 @@ class _BetPlacedDialogState extends State<BetPlacedDialog> {
                   color: Colors.black38,
                   shape: BoxShape.rectangle,
                   borderRadius: BorderRadius.circular(10)),
-              child: Column(
+              child: !isLoading ? _betCompletedColumn(betProvider, context, nextPage)
+              : Image.asset("assets/images/loading2.gif"),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _betCompletedColumn(BetProvider betProvider, BuildContext context, SelectedPage nextPage) {
+    return Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
@@ -89,20 +66,13 @@ class _BetPlacedDialogState extends State<BetPlacedDialog> {
                   SizedBox(height: 20),
                   FlatButton(
                       onPressed: () {
-                        fbCrud.updateUserProfile(_model.toMap(
-                            funds,
-                            betprovider.betInput,
-                            totalBets,
-                            averageOdd.toStringAsFixed(1),
-                            averageStake.toStringAsFixed(1),
-                            moneyLostSoFar,
-                            userWinRate));
-                        betprovider.oddModel.clear();
-                        betprovider.resultOdd = 1.0;
-                        betprovider.cashOut = 0.0;
-                        selectedPage.selectedPage = 0;
-                        Navigator.pushReplacementNamed(
-                            context, widget.buttonRoute);
+                        betProvider.oddModel.clear();
+                        betProvider.cashOut = 0.0;
+                        betProvider.resultOdd = 1.0;
+                        nextPage.selectedPage = 0;
+                        Navigator.of(context).pushReplacement(MaterialPageRoute(
+                          builder: (context) => MyApp()
+                        ));
                       },
                       child: Container(
                         width: 200,
@@ -119,11 +89,6 @@ class _BetPlacedDialogState extends State<BetPlacedDialog> {
                         ),
                       ))
                 ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+              );
   }
 }

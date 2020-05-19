@@ -2,11 +2,11 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fun_app/models/odd_model.dart';
 import 'package:fun_app/providers/ticket_validation_provider.dart';
+import 'package:meta/meta.dart';
 
 class FirebaseCrud {
-  String uid;
-  String docId;
-  FirebaseCrud(this.uid, this.docId);
+  final String uid;
+  FirebaseCrud({@required this.uid});
 
   final _db = Firestore.instance;
 
@@ -15,24 +15,40 @@ class FirebaseCrud {
       Map<String, dynamic> ticketInfo) async {
     DocumentReference docRef = await _db
         .collection("users")
-        .document(docId)
+        .document(uid)
         .collection("tickets")
         .add(ticketInfo);
 
     return docRef;
   }
 
+  // Convert Matches into Maps -------------> Helper Function
+  List<Map<String, dynamic>> convertMatches(List<OddModel> newMatches) {
+    List<Map<String, dynamic>> parsedMatches = List();
+    OddModel oddModel = OddModel();
+    for(var match in newMatches) {
+      parsedMatches.add(oddModel.oddModelToMap(match));
+    }
+    return parsedMatches;
+  }
 
   //Ading match as document to collection, I am adding more matches to same ticket
-  Future<void> addMatch(
-      Map<String, dynamic> match, DocumentReference docRef) async {
-    await _db
+  Future<String> addMatches(
+      List<Map<String, dynamic>> matches, DocumentReference docRef) async {
+        String successStr;
+        int successCovert = 0;
+    for(var i = 0; i < matches.length; i++) {
+      await _db
         .collection("users")
-        .document(docId)
+        .document(uid)
         .collection("tickets")
         .document(docRef.documentID)
         .collection("matches")
-        .add(match);
+        .add(matches[i]);
+      successCovert++;
+    }
+    (successCovert == matches.length) ? successStr = "Success!" : successStr = "Failure!";
+    return successStr;
   }
 
   //Get matches from specific ticket with id
@@ -40,7 +56,7 @@ class FirebaseCrud {
     List<OddModel> _model = [];
     QuerySnapshot snap = await _db
         .collection("users")
-        .document(docId)
+        .document(uid)
         .collection("tickets")
         .document(ticketId)
         .collection("matches")
@@ -54,68 +70,16 @@ class FirebaseCrud {
   }
 
   //Updating User Profile on Bet Submit
-  Future<void> updateUserProfile(Map<String, dynamic> updateData) async {
+  Future<String> updateUserProfile(Map<String, dynamic> updateData) async {
+    String successString;
     _db.runTransaction((transaction) async {
       DocumentSnapshot freshSnap =
-          await transaction.get(_db.collection("users").document(docId));
+          await transaction.get(_db.collection("users").document(uid));
       await transaction.update(freshSnap.reference, updateData);
+      successString = "User Profile Updated!";
     });
+    return successString;
   }
-
-  //Profile Query for averageOdd
-  Future<double> getSummedOdd() async {
-    QuerySnapshot snap = await _db
-        .collection("users")
-        .document(docId)
-        .collection("tickets")
-        .getDocuments();
-
-    double summedOdd = 0.0;
-    int bets = snap.documents.length;
-
-    snap.documents.forEach((doc) {
-      summedOdd += double.parse(doc.data["resultOdd"]);
-    });
-
-    double averageOdd = summedOdd / bets;
-    return averageOdd;
-  }
-
-  //Profile Query for averageStake
-  Future<double> getSummedStake() async {
-    QuerySnapshot snap = await _db
-        .collection("users")
-        .document(docId)
-        .collection("tickets")
-        .getDocuments();
-
-    double summedStake = 0.0;
-    int bets = snap.documents.length;
-
-    snap.documents.forEach((doc) {
-      summedStake += doc.data["bet"];
-    });
-
-    double averageStake = summedStake / bets;
-    return averageStake;
-  }
-
-  //Getting stream of matches from tickets
-  Stream<List<OddModel>> matches(String ticketId) {
-    return _db
-      .collection("users")
-      .document(docId)
-      .collection("tickets")
-      .document(ticketId)
-      .collection("matches")
-      .orderBy("time", descending: false)
-      .snapshots()
-      .map((snap) => snap.documents
-        .map((doc) => OddModel.fromJson(doc.data, doc.documentID))
-        .toList());
-      
-  }
-
 
   //Get all users active tickets with matches
   Future<void> userTips(TicketValidationProvider provider) async {
@@ -123,8 +87,9 @@ class FirebaseCrud {
     List<List<OddModel>> _userActiveTips = [];
     QuerySnapshot snap = await _db
         .collection("users")
-        .document(docId)
+        .document(uid)
         .collection("tickets")
+        .where("ticketStatus", isEqualTo: "active")
         .getDocuments();
 
     snap.documents.forEach((doc) {
@@ -136,7 +101,7 @@ class FirebaseCrud {
     for (var i = 0; i < ticketKeys.length; i++) {
       QuerySnapshot snapshot = await _db
           .collection("users")
-          .document(docId)
+          .document(uid)
           .collection("tickets")
           .document(ticketKeys[i])
           .collection("matches")
@@ -158,42 +123,42 @@ class FirebaseCrud {
     data["status"] = status;
 
     await _db
-      .collection("users")
-      .document(docId)
-      .collection("tickets")
-      .document(ticketId)
-      .collection("matches")
-      .document(matchId)
-      .updateData(data)
-      .catchError((e) => print(e));      
+        .collection("users")
+        .document(uid)
+        .collection("tickets")
+        .document(ticketId)
+        .collection("matches")
+        .document(matchId)
+        .updateData(data)
+        .catchError((e) => print(e));
   }
 
   // Set ticket process to finished
   Future<void> updateTicketProcess(String ticketId) async {
-
     var data = Map<String, dynamic>();
     data["processFinished"] = "yes";
 
-    await _db.collection("users")
-      .document(docId)
-      .collection("tickets")
-      .document(ticketId)
-      .updateData(data)
-      .catchError((e) => print(e));
+    await _db
+        .collection("users")
+        .document(uid)
+        .collection("tickets")
+        .document(ticketId)
+        .updateData(data)
+        .catchError((e) => print(e));
   }
-
 
   //Update ticket Status
   Future<void> updateTicket(String ticketId, String status) async {
     var data = Map<String, dynamic>();
     data["ticketStatus"] = status;
 
-    await _db.collection("users")
-      .document(docId)
-      .collection("tickets")
-      .document(ticketId)
-      .updateData(data)
-      .catchError((e) => print(e));
+    await _db
+        .collection("users")
+        .document(uid)
+        .collection("tickets")
+        .document(ticketId)
+        .updateData(data)
+        .catchError((e) => print(e));
   }
 
   //Get all winning tickets
@@ -201,22 +166,22 @@ class FirebaseCrud {
     List<int> tickets = [];
     int winCounter = 0;
     int activeCounter = 0;
-    await _db.collection("users")
-      .document(docId)
-      .collection("tickets")
-      .getDocuments()
-      .then((snapshot) {
-        snapshot.documents.forEach((document) {
-          if(document.data["ticketStatus"] == "win") {
-            winCounter++;
-          } else if(document.data["ticketStatus"] == "active") {
-            activeCounter++;
-          }
-        });
+    await _db
+        .collection("users")
+        .document(uid)
+        .collection("tickets")
+        .getDocuments()
+        .then((snapshot) {
+      snapshot.documents.forEach((document) {
+        if (document.data["ticketStatus"] == "win") {
+          winCounter++;
+        } else if (document.data["ticketStatus"] == "active") {
+          activeCounter++;
+        }
       });
-      tickets.add(winCounter);
-      tickets.add(activeCounter);
-      return tickets;
+    });
+    tickets.add(winCounter);
+    tickets.add(activeCounter);
+    return tickets;
   }
-
 }

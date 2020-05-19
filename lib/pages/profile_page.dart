@@ -13,7 +13,7 @@ class _ProfilePageState extends State<ProfilePage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    print("profile build");
+
     double screenHeight = MediaQuery.of(context).size.height;
     double screenWidth = MediaQuery.of(context).size.width;
     final profileStream = Provider.of<PlayerModel>(context);
@@ -35,8 +35,8 @@ class _ProfilePageState extends State<ProfilePage>
               ),
               CircleAvatar(
                 radius: 50,
-                backgroundImage: profileStream.userAvatar == null
-                    ? AssetImage("assets/milan.png")
+                backgroundImage: profileStream.userAvatar == ""
+                    ? AssetImage("assets/images/milan.png")
                     : NetworkImage(profileStream.userAvatar),
                 backgroundColor: Colors.black12,
               ),
@@ -81,7 +81,7 @@ class _ProfilePageState extends State<ProfilePage>
                 height: 16,
               ),
               RatingBar(
-                initialRating: double.parse(profileStream.form),
+                initialRating: profileStream.winRate.toDouble() / 10,
                 ignoreGestures: true,
                 minRating: 0,
                 direction: Axis.horizontal,
@@ -144,7 +144,7 @@ class _ProfilePageState extends State<ProfilePage>
                           height: 10,
                         ),
                         buildCenterColumn(
-                            "- ${profileStream.moneyLost}", "Money Lost")
+                            "${profileStream.moneyLost}", "Money Lost")
                       ],
                     ),
                   ],

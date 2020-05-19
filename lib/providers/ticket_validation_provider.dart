@@ -42,6 +42,10 @@ class TicketValidationProvider extends ChangeNotifier {
   //Function should take care of validation part for ticket
   validateMatchResult(List<OddModel> realTip, List<List<OddModel>> ticketTip,
       FirebaseCrud fbCrud, List<String> ticketId, PlayerModel model) async {
+    int totalbets = model.totalBets ?? 0;
+    int totalTicketsWon = model.ticketsWon ?? 0;
+    int totalTicketsLost = model.ticketsLost ?? 0;
+    int totalActiveTickets = totalbets - (totalTicketsLost + totalTicketsWon) ?? 0;
 
     for (var i = 0; i < ticketTip.length; i++) {
       int controlNumber = 0;
@@ -50,31 +54,33 @@ class TicketValidationProvider extends ChangeNotifier {
           if (realTip[q].host == ticketTip[i][j].host) {
             if (realTip[q].pick == ticketTip[i][j].pick) {
               controlNumber++;
-              if (controlNumber == ticketTip[i].length) {       
+              await fbCrud.updateMatchStatus(
+                  ticketId[i], "win", ticketTip[i][j].id);
+              if (controlNumber == ticketTip[i].length) {
                 await fbCrud.updateTicket(ticketId[i], "win");
+                totalTicketsWon++;
+                totalActiveTickets--;
 
-                List<int> wonAndActiveTickets = [];
-                wonAndActiveTickets = await  fbCrud.numberOfWinningOrActiveTickets();
-                int totalbets = model.totalBets;
                 var userData = Map<String, dynamic>();
-                userData["winRate"] = ((wonAndActiveTickets[0] / (totalbets - wonAndActiveTickets[1])) * 100).toInt();
+                userData["ticketsWon"] = totalTicketsWon;
+                userData["winRate"] =
+                    ((totalTicketsWon / ((totalbets - totalActiveTickets) ?? 1)) * 100).round();
+                        
 
                 await fbCrud.updateUserProfile(userData);
               }
+            } else {
               await fbCrud.updateMatchStatus(
-                  ticketId[i], "win", ticketTip[i][j].id);
-            }
-            else {
-              await fbCrud.updateMatchStatus(
-                ticketId[i], "lose", ticketTip[i][j].id);
+                  ticketId[i], "lose", ticketTip[i][j].id);
               await fbCrud.updateTicket(ticketId[i], "lose");
               await fbCrud.updateTicketProcess(ticketId[i]);
+              totalTicketsLost++;
 
-              List<int> wonAndActiveTickets = [];
-              wonAndActiveTickets = await  fbCrud.numberOfWinningOrActiveTickets();
-              int totalbets = model.totalBets;
               var userData = Map<String, dynamic>();
-              userData["winRate"] = ((wonAndActiveTickets[0] / (totalbets - wonAndActiveTickets[1])) * 100).toInt();
+              userData["ticketsLost"] = totalTicketsLost;
+              userData["winRate"] =
+                  ((totalTicketsWon / (totalbets - totalActiveTickets)) * 100)
+                      .toInt();
 
               await fbCrud.updateUserProfile(userData);
             }

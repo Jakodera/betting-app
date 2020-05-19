@@ -21,7 +21,6 @@ class BetProvider extends ChangeNotifier {
 
   set resultOdd(double odd) {
     _resultOdd = odd;
-    print(_resultOdd);
     notifyListeners();
   }
 
@@ -50,8 +49,8 @@ class BetProvider extends ChangeNotifier {
     payOut(_resultOdd, _betInput.toDouble());
   }
 
-  void removeMatch(OddModel match, int index) {
-    oddModel.removeAt(index);
+  void removeMatch(OddModel match) {
+    oddModel.remove(match);
     if(match.pick == "1") {
       resultOdd /= double.parse(match.coefHost);
     } else if(match.pick == "X") {

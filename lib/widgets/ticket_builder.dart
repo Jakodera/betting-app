@@ -90,8 +90,7 @@ class _TicketBuilderState extends State<TicketBuilder> {
                   Consumer<BetProvider>(
                     builder: (_, betProvider, __) => GestureDetector(
                       onTap: () {
-                        return betProvider.removeMatch(widget.model,
-                            betProvider.oddModel.indexOf(widget.model));
+                        return betProvider.removeMatch(widget.model);
                       },
                       child: Icon(
                         Icons.restore_from_trash,

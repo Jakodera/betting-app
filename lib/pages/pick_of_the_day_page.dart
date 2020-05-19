@@ -1,4 +1,4 @@
-import 'package:firebase_admob/firebase_admob.dart';
+//import 'package:firebase_admob/firebase_admob.dart';
 import 'package:flutter/material.dart';
 import 'package:fun_app/widgets/display_league.dart';
 import 'package:fun_app/widgets/display_match_card.dart';
@@ -13,12 +13,12 @@ class PickOfTheDay extends StatefulWidget {
 
 class _PickOfTheDayState extends State<PickOfTheDay>
     with AutomaticKeepAliveClientMixin {
-  MobileAdTargetingInfo targetingInfo;
+  /*  MobileAdTargetingInfo targetingInfo;
   BannerAd myBanner;
 
   @override
   void initState() {
-    /*
+    
   targetingInfo = MobileAdTargetingInfo(
       keywords: <String>["soccer", "football", "betting", "prize"],
       testDevices: testDevice != null ? <String>[testDevice] : null,
@@ -37,20 +37,19 @@ class _PickOfTheDayState extends State<PickOfTheDay>
   myBanner
       ..load()
       ..show(anchorType: AnchorType.bottom);
-  */
+ 
   super.initState();
   }
-/*
+
   @override
   void dispose() { 
     myBanner.dispose();
     super.dispose();
-  }
-*/
+  } */
+
   Widget build(BuildContext context) {
     super.build(context);
 
-    print("Pick of the day build");
     final double height = MediaQuery.of(context).size.height;
     final double width = MediaQuery.of(context).size.width;
 
@@ -66,7 +65,7 @@ class _PickOfTheDayState extends State<PickOfTheDay>
               onTap: _launchURL,
               child: ClipRRect(
                 child: Image.asset(
-                  "assets/guess.jpg",
+                  "assets/images/guess.jpg",
                   height: height * 0.2,
                   width: width * 0.95,
                   fit: BoxFit.cover,

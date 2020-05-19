@@ -26,7 +26,7 @@ class DisplayLeagues extends StatelessWidget {
       child: Consumer<LeagueLogoSelected>(
         builder: (_, leagueIndex, __) => InkWell(
           onTap: () {
-            leagueIndex.getIndex(index);
+            leagueIndex.index = index;
           },
           child: CircleAvatar(
             backgroundColor: Colors.white,
